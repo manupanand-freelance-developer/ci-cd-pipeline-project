@@ -1,0 +1,57 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: my-pipeline
+spec:
+  workspaces:
+    - name: output
+  tasks:
+    - name: cleanup
+      taskRef:
+        name: cleanup
+      workspaces:
+        - name: source
+          workspace: output
+    - name: git-clone
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: "<your-repository-url>"
+        - name: revision
+          value: "main"
+      workspaces:
+        - name: output
+          workspace: output
+    - name: flake8
+      taskRef:
+        name: flake8
+      workspaces:
+        - name: output
+          workspace: output
+    - name: nose
+      taskRef:
+        name: nose
+      workspaces:
+        - name: source
+          workspace: output
+    - name: buildah
+      taskRef:
+        name: buildah
+      params:
+        - name: image
+          value: "<your-image-name>"
+      workspaces:
+        - name: output
+          workspace: output
+    - name: deploy
+      taskRef:
+        name: openshift-client
+      params:
+        - name: app-name
+          value: "<your-app-name>"
+        - name: build-image
+          value: "<your-image-name>"
+      workspaces:
+        - name: output
+          workspace: output
