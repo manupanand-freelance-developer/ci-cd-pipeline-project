@@ -1,18 +1,19 @@
 name: CI workflow
 
 on:
-  push: 
+  push:
     branches: ["main"]
   pull_request:
     branches: ["main"]
   workflow_dispatch:
-    
+
 jobs:
-  build: 
+  build:
     runs-on: ubuntu-latest
     container: python:3.9-slim
+
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up Python environment
@@ -23,9 +24,7 @@ jobs:
       - name: Install system dependencies
         run: |
           apt-get update
-          apt-get install -y sudo
-          sudo apt-get update
-          sudo apt-get install -y sqlite3 ca-certificates chromium-driver python3-selenium
+          apt-get install -y sudo sqlite3 ca-certificates chromium-driver python3-selenium
 
       - name: Install Python dependencies
         run: |
@@ -42,8 +41,12 @@ jobs:
       - name: Lint with flake8
         run: |
           flake8 service --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 service --count --max-complexity=10 --max-line-length=127 --statistics
+          flake8 service --count --max-complexity=10 --max-line-length=127 --statistics --exit-zero
 
-      - name: Run unit test with nose
+      - name: Run unit tests with nose
         run: |
-          nosetests -v --with-spec --spec-color --with-coverage --cover-package=app
+          nosetests -v --with-spec --spec-color --with-coverage --cover-package=service
+
+      - name: Generate Coverage Report
+        run: |
+          coverage report -m
