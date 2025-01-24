@@ -1,15 +1,65 @@
 apiVersion: tekton.dev/v1beta1
-kind : task
+kind: Task
 metadata:
-  name: checkout
-spec: 
+  name: cleanup
+spec:
+  description: This task will clean up a workspace by deleting all the files.
+  workspaces:
+    - name: source
+  steps:
+    - name: remove
+      image: alpine:3
+      env:
+        - name: WORKSPACE_SOURCE_PATH
+          value: $(workspaces.source.path)
+      workingDir: $(workspaces.source.path)
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+      script: |
+              #!/usr/bin/env sh
+              set -eu
+              echo "Removing all files from ${WORKSPACE_SOURCE_PATH} ..."
+              # Delete any existing contents of the directory if it exists.
+              if [ -d "${WORKSPACE_SOURCE_PATH}" ]; then
+                echo "Removing non-hidden files..."
+                rm -rf "${WORKSPACE_SOURCE_PATH:?}"/*
+                echo "Removing hidden files..."
+                rm -rf "${WORKSPACE_SOURCE_PATH}"/.[!.]*
+                rm -rf "${WORKSPACE_SOURCE_PATH}"/..?*
+                echo "Cleanup completed!"
+              else
+                echo "Workspace path does not exist!"
+              fi
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: nose
+spec:
+  description: This task runs nose test cases
+  workspaces:
+    - name: source
   params:
-    - name: repo-url
-      description: url of githubrepo
+    - name: args
+      description: Arguments to pass to nose
       type: string
-
+      default: "-v"
   steps: 
-    - name: checkout
-      image: bitnami/git:latest
-      command: [git]
-      args: ["clone" ,"$(params.repo-url)"]
+    - name: nosetests
+      image: python:3.9-slim
+      workingDir: $(workspaces.source.path)
+      script: |
+              #!/bin/bash
+              set -e
+              python -m pip install --upgrade pip wheel
+              # Cache pip dependencies to speed up subsequent builds
+              pip install --cache-dir=/tmp/pip-cache -r requirements.txt
+              nosetests $(params.args)
+      volumeMounts:
+        - name: pip-cache
+          mountPath: /tmp/pip-cache
+
+  volumes:
+    - name: pip-cache
+      emptyDir: {}
