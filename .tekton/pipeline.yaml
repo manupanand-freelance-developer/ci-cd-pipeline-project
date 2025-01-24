@@ -17,7 +17,7 @@ spec:
         name: git-clone
       params:
         - name: url
-          value: "<your-repository-url>"
+          value: "https://github.com/manupanand-freelance-developer/ci-cd-pipeline-project"
         - name: revision
           value: "main"
       workspaces:
@@ -40,7 +40,7 @@ spec:
         name: buildah
       params:
         - name: image
-          value: "<your-image-name>"
+          value: "flask-app"
       workspaces:
         - name: output
           workspace: output
@@ -49,9 +49,9 @@ spec:
         name: openshift-client
       params:
         - name: app-name
-          value: "<your-app-name>"
+          value: "flask-app"
         - name: build-image
-          value: "<your-image-name>"
+          value: "flask-app"
       workspaces:
         - name: output
           workspace: output
