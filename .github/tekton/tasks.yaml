@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1beta1
+kind : task
+metadata:
+  name: checkout
+spec: 
+  params:
+    - name: repo-url
+      description: url of githubrepo
+      type: string
+
+  steps: 
+    - name: checkout
+      image: bitnami/git:latest
+      command: [git]
+      args: ["clone" ,"$(params.repo-url)"]
